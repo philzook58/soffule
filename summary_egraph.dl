@@ -1,0 +1,40 @@
+.decl a(n: number)
+.decl f(n: number, m: number)
+.decl label(n: number, m : symbol)
+// This is merely initializing the graph
+a(0).
+f(1, 0).
+f(2, 1).
+f(3, 2).
+f(4, 3).
+f(5, 4).
+
+label(0, "a").
+label(1, "f(a)").
+label(2, "f(f(a))").
+label(3, "f(f(f(a)))").
+label(4, "f(f(f(f(a))))").
+label(5, "f(f(f(f(f(a))))))").
+
+.decl equiv(n: number, m : number) eqrel
+equiv(3,0). // f(f(f(a))) = a
+//equiv(5,0). // f(f(f(f(f(a))))) = a
+
+// congruence closure for f
+equiv(A, A0) :- f(A, B), equiv(B, B0), f(A0, B0).
+
+.decl equivl(l : symbol, l1 : symbol) eqrel
+equivl(l, l1) :- equiv(A,B), label(A,l), label(B,l1).
+
+// I could do this is I enumrate all the eclass ids.
+//.decl equiv2(n : number, m : number) // choice-domain m
+//equiv2(a,c) :- c = min b: equiv(a,b).
+//.output equiv2
+
+
+.decl f2(n: number, m: number)
+f2(n,m) :- f(a,b), n = min a1: equiv(a,a1), m = min b1: equiv(b,b1).
+//f2(n,m) :- f(a,b), equiv2(a,n), equiv2(b,m).
+.output f2
+.output f
+.output equiv

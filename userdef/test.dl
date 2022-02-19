@@ -1,0 +1,11 @@
+.functor f(number):number
+.functor g():symbol
+
+.decl foo(x : symbol)
+foo(@g()) :- true.
+//foo(x) :- x = symbol(f(3)).
+.output foo(IO=stdout)
+
+// 
+// @find(a)
+// reason("rule7", a,b,@merge(a,b)) :-

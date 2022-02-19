@@ -1,0 +1,26 @@
+#define term(a) eq(a,a)
+
+.type Obj = A
+        | B
+        | C
+        | D
+        | E
+
+.type Hom = F | G | H | K | PB { e : Ob, p : Hom, : q : Hom } | Comp {f : Hom, g : Hom} | Id {a : Ob}
+
+.decl eqo(x : Ob, y : Ob) eqrel
+//.limitsize eqo(n=4)
+
+.decl eqm(x : Hom, y : Hom) eqrel
+//.limitsize eqm(n=4)
+
+
+eqm($Comp(Id(a), f), f) :- termm( $Comp($Id(a), f) ).
+eqm($Comp(f, Id(a)), f) :- termm( $Comp(f, $Id(a)) ).
+
+
+.decl hom(f : Hom, a : Ob, b : Ob )
+type($Id(o), o, o)  :- mterm( $Id(o) ).
+type($Comp(f,g), a, c)  :- type(f, a, b), type(g,b,c).
+
+

@@ -1,0 +1,110 @@
+/* 
+.type Stmt = Set { x : symbol, e : symbol, l : number}
+           | Seq {s1 : Stmt, s2 : Stmt, l : number}
+
+#define SET(x,e)  $Set(  x , e, __COUNTER__ )
+.decl prog(  p : Stmt  )
+prog( $Seq(
+                SET(  "y", "x" ),
+                SET(  "z", "y" )
+, 3 )).
+*/
+
+
+
+
+/*
+
+// History is the analog of Ctx for functional language.
+// Maybe if I do a State monad encoding, you can see they are literally the same?
+
+do
+  print "hi"
+  myline <- readline
+
+\state -> (state', )
+
+
+
+*/
+
+.type History =
+  Stmt {   , prev : History} | Start | Top // Top is any history value, history unknonw
+  // Start is actual starl of program. Maybe it is the same as Top
+  // A loop probably has top as it's history in the start of the loop,
+  // Or as many unrollings as you want for context awareness.
+
+/*
+
+in avaiable expression analysis
+
+We can add 
+
+enter and exit distinction, or convention of just after stmt
+
+Nothing is available for Top history.
+That's not true. external Constants are.
+
+There isn't really anything that special about History vs Future vs both/ctx.
+It's just about program position.
+
+Maybe it makes a difference about naturality of forward vs backward 
+
+http://www.cse.psu.edu/~gxt29/teaching/cse597s19/slides/06StaticaAnalysisInDatalog.pdf
+Available expresson anlaysis in souffle
+{ | x \notelem FV(e)}
+This not elem is a tough one
+Eh, maybe not
+*/
+
+stmt(s : Stmt, h : history)
+stmt(s, $Start()) :- prog(s)
+stmt(s1,h), stmt(s2, s1 :: h) :- stmt( Seq(s1,s2) , h)
+stmt(t, $Ite() :: h), stmt(e, $Ite() :: h) :- stmt(Ite(c, t, e), h).
+stmt(body,h), stmt(body, $Top()), stmt(body, body :: $Top()) :- stmt($While(c, body), h). // unroll as many times as you like?
+//or
+stmt(body, Star(c,body) :: h) :- stmt($While(c,body), h). // don't lose anything then.
+//stmt($Set(x,e) :: h) atomic statement, nothing to do here.
+//stmt(Print,h)
+
+expr(e,h) :- stmt($Set(x,e) , h).
+expr(c,h) :- stmt($While(c,s) , h).
+expr(c,h) :- stmt($If(c,t,e) , h).
+
+// The expression context dfoesn't matter, unless expressions include bining forms like let.
+expr(h, x), expr(h, y) :- expr($Add(x,y),h).
+
+
+/*
+freevar(h,e,v) :- expr($Var(v),h)
+freevar(h,e,v) :- expr($Add(x,y),h)
+*/
+
+
+.decl available(h : history, he : history, e : expr, )
+// at history h, epxression e with history he is available.
+// The extra parameter he avoids having to delete things. But maybe it is desirable?
+available(h2,h,e), available(h2,h,x) :-
+    stmt( $Set(x,e) , h), h2 = $Set(x,e) :: h
+
+
+/*
+// We can delete subsumed contexts
+available(h,h1,e) <= available(h,h2,e) :- h1 <= h2.
+*/
+
+
+/*
+egraph available expression analysis
+available(h2,e), available(h2,x), eq(h2, x,e) :-
+    stmt( $Set(x,e) , h), h2 = $Set(x,e) :: h
+
+
+// Pretty much everything except s propagates expressions
+available(s :: h, e) :- available(h, e), stmt(s,h), s != $Set(_,_) 
+eq(s :: h, e1, e2) :- eq(h, e1, e2), stmt(s,h), s != $Set(_,_) 
+
+// For Set, We propagate everything except those expressions that contain x
+// Maybe we should just insist on ssa?
+eq(h, e1, e2), stmt($Set(x,e),h),
+*/

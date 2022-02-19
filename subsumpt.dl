@@ -1,0 +1,56 @@
+
+.type optionsymbol = None {} | Some {val : symbol}
+
+.decl A(v : optionsymbol)
+
+A($Some("foo")).
+A($Some("fiz")).
+A($Some("foz")).
+//A($None()).
+
+A($None()) :- A(x), A(y), x != y.
+A(x) <= A($None()) :- A($None()).
+
+.output A(IO=stdout)
+
+
+
+// intervals getting bigger
+/*
+components?
+We'd need to know at compile time how many possible instantations
+.comp Interval<T>{
+    .decl upper(x : T)
+    .decl lower(x : T)
+}
+
+
+*/
+.decl upper(t : symbol, x : float)
+upper(t,x) <= upper(t, y) :- x <= y.
+.decl lower(t : symbol, x : float)
+lower(t,x) <= lower(t, y) :- y <= x.
+
+.output upper(IO=stdout)
+.output lower(IO=stdout)
+
+upper("foo", 7).
+upper("foo", 8).
+upper("fiz", 9).
+
+lower("foo", 8).
+lower("fiz", 9).
+lower("foo", -3).
+
+
+.comp Interval<T>{
+    .decl upper(x : T)
+    upper(x) <= upper(y) :- x <= y.
+    .decl lower(x : T)
+    lower(x) <= lower(y) :- y <= x.
+}
+.init i1 = Interval<float>
+
+i1.upper(3).
+i1.upper(14).
+.output i1.upper(IO=stdout)

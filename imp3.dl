@@ -1,0 +1,18 @@
+.type label = number
+.type Expr = Lit {n : number}
+
+.decl dummy()
+dummy().
+
+#define SET(x,e) set(autoinc(), x, e) :- dummy()
+.decl set(l : label, v : symbol, e : Expr)
+// I need a body ofthe clause to do this for some reason
+//set(autoinc(), "x", $Lit(0)) :- p().
+SET("x", $Lit(0)).
+SET("x", $Lit(0)).
+SET("x", $Lit(0)).
+
+// I can use negative labels for ones I need to manually define.
+// Implicit ordering?
+// Hmm. Not so good.
+.output set(IO=stdout)

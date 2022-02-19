@@ -1,0 +1,72 @@
+// these are such a bad idea
+#define plus(a,b) $Plus(a,b)
+#define mul(a,b) $Mul(a,b)
+#define lit(x) $Lit(x)
+#define var(x) $Var(x)
+#define REWRITE(a,b) eq(b, myextremelyfreshvalue) :- eq(a, myextremelyfreshvalue).
+// #define REWRITE(a,b)    eq(a,b) :- term(a)
+#define BIRW(a,b) REWRITE(a,b) REWRITE(b,a)
+// define CONG1 CONG2 CONG3 to auto build congruence closure clauses for contructors.
+// I can also use includes
+// could put these macros in egraph.h
+// And could do my stratified category library thing.
+
+// I could possibly compile quantifiers using souffle passes? Ehh. Maybe.
+// I might have to make a metainterpeter. No. This won't work. nvm.
+
+.type AExpr = Lit {n : number}
+            | Var {x : symbol}
+            | Plus {a: AExpr, b : AExpr}
+            | Mul {a: AExpr, b : AExpr}
+
+.decl eq(x : AExpr, y : AExpr) eqrel
+.limitsize eq(n=4)
+.decl term(x : AExpr)
+eq(a,a) :- term(a).
+// term(a) :- eq(a, _).
+// .limitsize term()
+
+eq(plus(a,b), e) :- eq($Plus(b,a), e).
+eq(plus(mul(a,b),mul(b,c)), e) :- eq($Mul(a,$Plus(b,c)), e).
+
+// We get souffle functor evaluation. That's pretty sweet 
+REWRITE( plus(lit(n), lit(m)) , lit(n + m) )
+
+BIRW( plus(a,plus(b,c)) , plus(plus(a,b),c)   )
+BIRW( mul(a,mul(b,c)) , mul(mul(a,b),c)   )
+
+BIRW( mul(a,plus(b,c)) , plus(mul(a,b), mul(a,c)) )
+
+
+
+//eq($Add($Var("x"),$Var("y")), $Add($Var("x"),$Var("y"))).
+
+term($Plus($Var("x"),$Var("y"))). // insert into "egraph"
+term(  mul( lit(7), plus(var("x"), var("z"))) ).
+term( plus(lit(1),lit(2)) ).
+// congruence closure
+
+//eq($Add(a1,b1), $Add(a2,b2)) :- eq(a1,a2), parents(a1,$Add(a1,b1)), parents(a2, $Add(a1, b2)), eq(b1,b2).
+// :- eq(a1,a2), term($Add(a1,b1)), eq(a2,b2)
+
+
+// simplification
+// size($Add(a,b), s1 + s2) :- term($Add(a,b)), size(a,s1), size(a,s2).
+// simp(t) :- eq( queryterm, t), min s: size(t,s)
+
+// No without the eclass indirection the number of terms is going to explode? Hmm. I'm not sure.
+// When we're pattern matching down, we should go through eclass indirections?
+// $Add(ab,c), eq(ab, $Add(a,b))
+
+// Wait am i crazy? If i pattern match through indirections, I don't need to do congruence closure?
+// congurence closure is kind of reifying this.
+// smart patterns #define add(x,y) ($Add(a,b), eq(a,x), eq(b,y)) but only if I can fresh symbolize. mcpp might not do this
+
+
+// eq($Add($Var("x"),$Var("y")), $Add($Var("x"),$Var("y"))).
+// https://souffle-lang.github.io/implementation
+
+// magic transform could possibly be very useful.
+// -m=* does to all relations. Or can be marked out.
+
+.output eq

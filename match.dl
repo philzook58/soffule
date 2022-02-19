@@ -1,0 +1,35 @@
+.type var <: symbol
+.type op <: symbol
+.type blk <: symbol
+
+.decl binop(blk : blk, out : var, op : op, a : var, b : var)
+.decl unop(blk : blk, out : var, op : op, a : var)
+.decl load(blk : blk, out : var, addr : var)
+.decl br(blk: blk, cond : var, true_blk : blk, false_blk : blk)
+// .decl phi() We'll think about this part later
+//b1:
+    binop("b1", "z", "add", "x", "y" ).
+    unop("b1", "a", "neg", "z" ).
+    br("b1", "z", "b2", "b3").
+//b2:
+    load("b2" , "q", "z").
+    br("b2", "true" ,"exit", "exit").
+//b3:
+    binop("b3", "addr", "add", "z", "4").
+    load("b3" , "q", "addr").
+    br("b3", "true" ,"exit", "exit").
+
+
+.decl add_match(blk : blk, out : var, a : var, b : var)
+.output add_match
+add_match(blk,out,a,b) :- binop(blk,out, "add", a, b).
+
+.decl neg_match(blk : blk, out : var, a : var)
+.output neg_match
+neg_match(blk,out,a) :- unop(blk,out, "neg",a).
+
+.decl load_add_match(blk : blk, out : var, addr_off : var, addr : var, offset : var)
+.output load_add_match
+load_add_match(blk, z, addr_off, addr, offset) :- 
+    binop(blk, addr_off, "add", addr, offset),
+    load(blk, z, addr_off).

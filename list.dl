@@ -1,0 +1,9 @@
+.type var <: symbol
+.type Expr = Lit {n : number}
+.type Stmt = Set {x : var, e : Expr} | Ite {c : Expr, t : StmtList, e : StmtList} 
+.type StmtList = [s : Stmt, next: StmtList]
+
+.decl prog(s : StmtList)
+prog( [$Set("x", $Lit(7)),
+      [ $Set("x", $Lit(7)),
+        nil]] ). // This is only marginally, marginally better than Seq.

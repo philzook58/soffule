@@ -1,0 +1,17 @@
+.decl a(n: number)
+.decl f(n: number, m: number)
+// This is merely initializing the graph
+a(0).
+f(0, 1).
+f(1, 2).
+f(2, 3).
+f(3, 4).
+f(4, 5).
+f(7, 8).
+
+
+.decl fnew(n : number, m : number)
+// fnew(n, -1-$) alternative. Hmm.
+fnew(n, $ + j + 1) :- f(_,n), !f(n, _), j = max k: f(_,k).
+
+.output fnew

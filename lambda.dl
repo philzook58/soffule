@@ -1,0 +1,103 @@
+
+/*
+Datalog is memozing.
+Does this have any relation to super compilation?
+
+Suggestion: implement lambda calc execution as abstract machine.
+
+
+*/
+.type Expr = Lit {n : number}
+            | Var {x : symbol}
+            | Lam {x : symbol, body : Expr}
+            | App {f : Expr, x : Expr}
+
+.type HExpr = 
+           //   Hole {}
+           // | HLit {n : number}
+           // | HVar {x : symbol}
+              HLam {x : symbol}
+            | LApp {x : Expr}
+            | RApp {f : Expr}
+.type Ctx = Nil {} | Cons {c : HExpr, rest : Ctx}
+
+.decl prog( t : Expr )
+prog($Lam("x", $Var("x"))).
+
+// term is the step relation for abstract machine. 
+// I don't have env though?
+.decl term( t : Expr, c : Ctx)
+term(t , $Nil()) :- prog(t).
+term( body , $Cons($HLam(x), ctx)) :- term($Lam(x, body) , ctx).
+term(f  , $Cons($LApp(x), ctx)), term(x  , $Cons($RApp(f), ctx)) :- term($App(f,x) , ctx).
+.output term(IO=stdout)
+
+/*
+.decl reach(t : AExpr, ctx : Stack/Ctx )
+reach(t, []) :- prog(t)
+reach(e, Add2(n) :: ctx) :- reach(Lit(n), Add1(e) :: ctx)
+reach(n + m, :: ctx) :- reach(Lit(n), Add2(m) :: ctx)
+reach(t, ) :-
+:- reach( ,   )
+
+Hmm. Using egraphs, could you inject equational reasoning into a supercompiler?
+Extract final program
+Expansion of variables
+Boolean variable x -> split into True and False
+reach($True(), ctx), reach($False(), ctx) :- reach(Var(x), ctx), type(x, "bool")
+except you might want to correct the context at that point? That doesn't feel right.
+
+We could subsume more optimal terms over less optimal?
+
+*/
+
+
+
+// Just a boundvar context is an abstraction of this other context. Boundvars are all that matter really.
+// We really should be associating 
+// This dedeuplicates the expressions that could only possibly have the same value
+/*
+.type Ctx = Nil | Cons {x : symbol, Ctx}
+term(t , $Nil()) :- prog(t).
+term( body , $Cons(x, ctx)) :- term($Lam(x, body) , ctx).
+term(f  , ctx), term(x  , ctx) :- term($App(f,x) , ctx).
+*/
+
+.type Value = VLit {n : number} | Closure {c : Ctx, x : symbol, body : Expr } | Top
+.decl cfa( , v : Value)
+cfa(t, $Top()) :- cfa(t,v1), cfa(t,v2), v1 != v2
+// 2 value allowed cfa(t, $Top()) :- cfa(t,v1), cfa(t,v2), v1 != v2, cfa(t,v3), v1 != v3, v3 != v2
+cfa(t, v) <= cfa(t, $Top()) :- cfa(t, $Top()), cfa(t, v)), v != $Top() 
+
+cfa( $Lit(n), ctx, $VLit(n) ) :- term($Lit(n), ctx).
+cfa( $Lit(n), ctx, $VLit(n) ) :- term($Lam(x,b), ctx), cfa( b, ctx  )
+cfa(  )
+
+
+.type Stmt = 
+      Set {x : symbol, e : Expr}
+    | While{ c : Expr, body : Stmt} // BExpr really
+    | Ite{c : Expr, t : Stmt , e : Stmt} // BExpr really
+    | Seq {s1 : Stmt, s2 : Stmt}
+
+// How to label program points now
+// $Set(x, 1 + x) are not all the same
+// Could do the same thing as above
+
+// RSeq(Stmt) or RSeq(Lattice) ? there are evaluated quntities in there.
+
+/*
+
+idea2
+
+#define stmt(s)  label($, stmt)
+
+stmt($Set(x,1)).
+stmt($Set(x,1)).
+stmt($Set(x,1)).
+=====>
+label($,Set(x,1))
+So they do get unique labels.
+Could also alias mcpp to cpp before running soufflw.
+
+*/

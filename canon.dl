@@ -1,0 +1,16 @@
+#define EQ(x,y) canon(x,z), canon(y,z)
+.decl canon(x : symbol, y : symbol)
+
+.decl symbol(x : symbol)
+symbol("x").
+symbol("y").
+symbol("z").
+
+canon(x,x) :- symbol(x).
+canon(x,z) :- canon(x,y), canon(y,z).
+canon(x,y) <= canon(x,z) :- y <= z.
+
+canon("x","y").
+canon("y","z").
+
+.output canon(IO=stdout)

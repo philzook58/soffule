@@ -1,0 +1,187 @@
+/*
+.type value <: symbol
+.type operand <: symbol
+.decl binop(op: operand, x : value, y: value, out:value)
+
+binop("add", "(tid 3892048)", "(tid 8290283940)", "(tid 89304809)").
+
+
+store_add_match(v,x,add_node,store_node) :- strore(addr, v , store_node), binop("add",  x , offset, v, add_node), literal(offset, 4)
+The pattern is not data other than it is the datalog program.
+I could compile an ocaml graph of some kind to
+Or interepret Blk.t as literally a datalog program?
+It will be kind of sequential / toplogical order.
+Huh.
+That probably _is_ a good order.
+It's kind of an execution
+We could use primus :)
+
+Is it kind of an asbstract interpetation? Is that why datalog is close to natural?
+
+An abstract interpetation where the domain is the powerset of matching states.
+And the phi node join takes a cross product with joins ofg the dictionaries inside.
+
+
+pattern = List?
+And we need to reify matching envs. ugh.
+
+
+*/
+.type Expr = Lit { x : number }
+           | Var { x : symbol }
+           | Add {e_1 : Expr, e_2 :Expr}
+
+.decl start(x:Expr)
+start( $Add( $Add( $Lit(3), $Lit(4) ) , $Var("x") )).
+
+// flattening expression. reifying the Expr table to some degree
+// This is the top down recursion. continuation?
+// One case needed for every recursive constructor
+.decl flat(x : Expr)
+flat(x) :- start(x).
+flat(x), flat(y) :- flat( $Add(x,y) ).
+
+
+// constant propagation
+// bottom up recursion
+.decl const(x : Expr)
+const( $Lit(x) ) :- flat($Lit(x)).
+const( $Add(x,y)  ) :- flat( $Add(x,y) ), const(x), const(y).
+
+.output const
+
+
+.type Stmt = Set { x : symbol, e : Expr, l : number}
+           | Seq {s_1 : Stmt, s_2 : Stmt, l : number}
+           // Skip
+           // Sadly we are not using cpp. it's mcpp. 
+           // i guess we should just label manually.
+           /*
+
+This could be another argument for the lisp frontend.
+
+           */
+
+// These don't work
+#define SET(x,e)  $Set(  x , e, __COUNTER__ )
+#define SEQ(x,e)  $Seq(  x , e, __COUNTER__ )
+
+
+.decl prog(  p : Stmt  )
+prog( $Seq(
+                $Set(  "y", $Var("x"), 1 ),
+                $Set(  "z", $Var("y"), 2 ) 
+, 3 )).
+
+//
+
+// autoincrmenet not allowed.
+.decl flat_prog(x : Stmt)
+flat_prog(x) :- prog(x).
+flat_prog(x), flat_prog(y) :- flat_prog( $Seq(x,y,_) ).
+
+// Generating program points?
+
+// WHILE Language from NIelson section 1.2
+
+.type Aop <: symbol
+.type Bop <: symbol
+.type Rop <: symbol
+
+.type label <: number
+.type var <: symbol
+
+.type AExpr = 
+        | Aop {  op : Aop, a1 : AExpr, a2 : AExpr}
+        | Lit { n : number}
+        | Var {x : symbol }
+.type BExpr = 
+        | True
+        | False
+        | Not {b : BExpr}
+        | Bop { op : Bop, b1 : BExpr, b2 : BExpr }
+        | Rop { op : Rop, a1 : AExpr, a2 : BExpr }
+
+.type Stmt = 
+        | Set { lhs : symbol , rhs : AExpr , label : number} 
+        | Skip { label : number }
+        | Seq {s1 : Stmt, s2 : Stmt}
+        | Ite { cond : BExpr,  label : number, then : Stmt, else : Stmt}
+        | While {cond : BExpr, label : number, body : Stmt}
+// refactor into Label(n , Stmt ) ? Every statement has one label
+.decl program( name : symbol, prog : Stmt )
+
+program( "example1.1" ,
+        $Seq( $Set("y", $Var("x"), 1),
+        $Seq( $Set("z", $Lit(1) ,  2),
+        $Seq( $While( $Rop( ">", $Var("y"), $Lit(1) ), 3,
+                      $Seq( $Set("z", $Aop("*", $Var("z"), $Var("y")), 4),
+                      $Seq( $Set("y", $Aop("-", $Var("y"), $Lit(1)), 5)))
+                    ),
+        $Seq( $Set($Var("y"), $Lit(0), 6)))))
+ ).
+
+
+floagraph12( n, prog , 0, 1) :- program(n, prog). // entrypoint
+flowgraph(n, s,  l1, l2 ) :- flowgraph( $Set( , , )  , _, _). 
+flowgraph(n, s1, l1  )  :- flwograph(n, $Seq($Set(_, _, l1), s2, l) ) // do I need to expand? both ends?
+flowgraph(   )
+
+
+allterms(n, s1), allterms(n, s2) :- allterms(n, $Seq(s1,s2)).
+allterms(n, s2) :- allterms(n, $While(_, _, s2)).
+allterms(then), allterms(else) :- allterms( $ITE( , ) ).
+
+next(s1,s2) :- allterms(Seq(s1,s2)).
+next(while, body ), next(body,while) :- allterms( $While(_, _ , body) ). // but this is wrong? Seq could be body which doesn't have label
+next(ite, then), next(ite,else) :- allterms(ITE()).
+
+label( s , l ) :- allterms(  $Set( , label) )
+label(  )
+
+nextlabel(l1,l2) :- next(s1,s2) , label(s1,l1), label(s2,l2)
+
+
+// idea: maybe we don't don't need to expand out and extarct labels.
+edge(s1, s2) // there should only be an edge between things that have labels in them. Hence Seq should not be in edge.
+// unless edge is the wrong concept?
+contains( s0, s1), contains(s0, s2) :- flat( $Seq(s1,s2) )
+
+comesfrom( n, s1, s3 ), comesfrom(n, s2,s1) :- comesfrom(n, $Seq(s1,s2), s3 ).
+comesfrom( n, s3, s1 ) :- comesfrom(n, s1, s2 ), s1 = $While(_, _ ,s3).
+comesfrom( n, then, s1 ), comesfrom(n, else, ),
+comesfrom(b, s)
+ :- comesfrom(n, s1, s2 ), s1 = $Ite(_, _ ,then, else).
+
+comesfrom( n, s1, l ) :- comesfrom($Seq(s1,s2), l)
+comesfrom( n, prog, l ) :- comesfrom($Seq(s1,s2), _)
+
+goes_to(n, prog, l)
+// Hmm. I may not want patterns to be datalog rules. Maybe they need to be a table.
+// Because how can i do partial matches?
+// How can I do those anyway?
+// start from outputs
+/*
+
+.type = Binop {}
+        Unop {}
+
+        etc
+
+        Is there a good reason to not just literally dump bap into datalog?
+
+Can I pull in ADT from 
+Well presumably it'll print them in the same way they cabn be input
+
+Don't go for different record types
+Pattern matching mostly does not care about store vs etc nodes.
+
+but then we're getting much closer to the ocamlgraph approach...
+
+
+node(id, label, PortList).
+
+
+
+*/
+

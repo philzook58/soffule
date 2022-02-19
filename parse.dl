@@ -1,0 +1,6 @@
+.type AExpr = Add {a : AExpr : b : AExpr} | Lit {n : number}
+
+.decl init(s : string)
+
+
+, match("")

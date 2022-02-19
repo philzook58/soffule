@@ -1,0 +1,29 @@
+
+
+.decl a(n: number)
+.decl f(n: number, m: number)
+.decl label(n: number, m : symbol)
+// This is merely initializing the graph
+a(0).
+f(1, 0).
+f(2, 1).
+f(3, 2).
+f(4, 3).
+f(5, 4).
+
+label(0, "a").
+label(1, "f(a)").
+label(2, "f(f(a))").
+label(3, "f(f(f(a)))").
+label(4, "ff(f(f(a)))").
+label(5, "fff(f(f(a)))").
+
+.decl equiv(n: number, m : number) eqrel
+equiv(3,1). // f(f(a)) = f(a)
+
+// congruence closure
+equiv(A, A0) :- equiv(B, B0), f(A, B), f(A0, B0).
+
+.decl equivl(l : symbol, l1 : symbol) eqrel
+equivl(l, l1) :- equiv(A,B), label(A,l), label(B,l1).
+.output equivl

@@ -1,0 +1,13 @@
+.functor eqfind(number):number
+.decl myeq(x : number, y : number) eqrel
+
+myeq(1,2).
+myeq(2,3).
+myeq(2,4).
+myeq(5,8).
+myeq(7,7).
+
+.decl parents(x : number)
+parents(@eqfind(x)) :- myeq(x,_).
+
+.output parents(IO=stdout)

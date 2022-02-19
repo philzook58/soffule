@@ -1,0 +1,7 @@
+.type Tree = Empty {}
+           | Node {t1: Tree, val: unsigned, t2: Tree}
+
+.decl eqrel_fast(x : Tree, y : Tree) eqrel
+eqrel_fast($Empty, $Node($Empty, 3, $Empty) ).
+eqrel_fast($Empty, $Node(A, 3, A) ).
+.output eqrel_fast
